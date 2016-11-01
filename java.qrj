@@ -1,0 +1,30 @@
+--------------------------------------------------------------------------------------------------------------------------------------------
+/*JVM GC [JVM,GC]*/
+--JVM 分类
+HotSpot   --Sun公司标准JVM,因Sun被Oracle收购,HotSpot就变成Oracle公司的了
+IBMJVM   --IBM公司产品
+JRockit   --BEA公司产品,用在WebLogic中间件上,因BEA被Oracle收购,WebLogic和JRockit都变成Oralce公司的了
+
+--HotSpot GC
+-XX:NewSize=200M   --设定年轻代的大小(字节),此为最小值
+-XX:NewRatio=6   --设定年老代和年轻代之间的大小比率,意味着tenured和young的比值6:1,默认值为2,年老代设置过小会导致full gc频繁
+-XX:MaxTenuringThreshold=1   --设置熬过年轻代多少次收集后移入老年区,默认为0,熬过第一次GC就转入
+-XX:SurvivorRatio=n   --年轻代中Eden区与两个Survivor区的比值
+-XX:+UseParallelOldGC   --配置年老代垃圾收集方式为并行收集,对于多cpu系统可进行并行收集,从而降低停顿时间,提高了吞吐量
+-XX:+DisableExplicitGC   --禁止调用System.gc(),防止应用程序触发full gc,但jvm的gc仍然有效
+-XX:+UseParallelGC   --并行
+-XX:+UseSerialGC   --串行
+-XX:+UseConcMarkSweepGC   --并发标记
+
+--IBMJVM GC
+-Xgcpolicy:gencon   --以不同方式处理短期存活的对象和长期存活的对象。采用这种策略时,具有许多短期存活对象的应用程序会表现出更短的停顿时间,
+                    --同时仍然产生很好的吞吐量。(推荐)
+-Xgcpolicy:subpool   --采用与默认策略相似的算法,但是采用一种比较适合多处理器计算机的分配策略。建议对于有16个或更多处理器的SMP计算机使用这种策略。
+                     --这种策略只能在IBM pSeries®和zSeries®平台上使用。需要扩展到大型计算机上的应用程序可以从这种策略中受益。
+-Xgcpolicy:optthruput   --WAS默认策略,对于吞吐量比短暂的GC停顿更重要的应用程序,通常使用这种策略。每当进行垃圾收集时,应用程序都会停顿。
+-Xgcpolicy:optavgpause   --通过并发地执行一部分垃圾收集,在高吞吐量和短GC停顿之间进行折中。应用程序停顿的时间更短。
+-Xmn200m   --直接指定jvm中年轻代的大小为200m
+
+--JRockit GC
+待补充
+--------------------------------------------------------------------------------------------------------------------------------------------

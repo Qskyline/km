@@ -1,0 +1,22 @@
+--------------------------------------------------------------------------------------------------------------------------------------------
+/*active commands [AC]*/
+whoami /user   --view current user
+net config workstation   --view current user
+quser   --view current user
+net user user_name [/domain]   --view user info
+tasklist|findstr "port/process_name"   --view process info
+tasklist /f /pid "process_port"   --kill process
+tasklist /f /im "process_name"   --kill process
+runas /user:user_name application_name
+net start 服务名
+net stop 服务名
+sc config 服务名 start=demand   --手动
+sc condig 服务名 start=auto   --自动
+sc config 服务名 start=disabled   --禁用
+sc start 服务名
+sc stop 服务名
+sc delete 服务名   --删除服务
+netsh winsock reset   --重置winsock接口
+wmic environment where name="PATH" get UserName,VariableValue
+wmic environment where name="os" set VariableValue="Windows_NT" 
+--------------------------------------------------------------------------------------------------------------------------------------------

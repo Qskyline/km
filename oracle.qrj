@@ -1,0 +1,152 @@
+--------------------------------------------------------------------------------------------------------------------------------------------
+/*common SQL [SQL]*/
+select * from dba_users;   --全库所有用户
+select * from all_users;   --当前用户能够看到的
+select * from user_users;   --当前用户
+
+select * from dba_views;   --全库所有视图
+select * from all_views;   --当前用户能够看到的视图
+select * from user_views;   --当前用户的视图
+
+select * from dba_tab_columns where Table_Name='table_name';    --查看表中字段
+select * from all_tab_columns where Table_Name='table_name'; 
+select * from user_tab_columns where Table_Name='table_name'; 
+
+alter user user_name identified by password;   --改密码
+
+select ucc.*, uc.constraint_type from user_cons_columns ucc, user_constraints uc 
+where ucc.constraint_name = uc.constraint_name and uc.table_name = '';   --查看约束
+
+grant authority_name1, authority_name2, .. to user_name;   --授权
+create table table_name(columns_info) tablespace tablespace_name;   --在特定表空间上创建表
+select * from v$version;   --查看Oracle版本
+show parameter db_block_size;   --查看块大小
+create temporary tablespace tablespace_name tempfile 'path/file_name1.dbf' size 10240M, 'path/file_name2.dbf' size 10240M, ..;   --表空间
+create tablespace tablespace_name datafile 'path/file_name1.dbf' size 30720M, 'path/file_name2.dbf' size 30720M, ..;   --表空间
+
+select 
+	d.tablespace_name,
+    Space "Sum_space(M)",
+    Blocks sum_blocks,
+    Space-nvl(free_space,0) "Used_space(M)",
+    round((1-nvl(free_space,0)/Space)*100,2) "Used_rate(%)",
+    free_space "Free_space(M)"
+from 
+(select tablespace_name,round(Sum(bytes)/(1024*1024),2) Space,Sum(blocks) Blocks from dba_data_files group by tablespace_name) d,
+(select tablespace_name,round(Sum(bytes)/(1024*1024),2) free_space from dba_free_space group by tablespace_name) f
+where d.tablespace_name = f.tablespace_name(+)
+union All --if have tempfile
+select 
+	d.tablespace_name,
+	Space "Sum_space(M)",
+	blocks sum_blocks,
+	used_space "Used_space(M)",
+	round(nvl(used_space,0)/Space*100,2) "Used_rate(%)",
+	nvl(free_space,0) "Free_space(M)"
+from 
+(select tablespace_name,round(Sum(bytes)/(1024*1024),2) Space,Sum(blocks) blocks from dba_temp_files group by tablespace_name) d,
+(select tablespace_name,round(Sum(bytes_used)/(1024*1024),2) used_space,round(Sum(bytes_free)/(1024*1024),2) free_space from v$temp_space_header group by tablespace_name) f
+where d.tablespace_name=f.tablespace_name(+)  
+order by 5 desc;   --查看数据库所有表空间
+
+select file_name,tablespace_name, bytes from dba_data_files;   --查看表空间和文件的对应关系
+select file_name,tablespace_name, bytes from dba_temp_files;
+
+--修改表空间大小
+alter database datafile 'path/file_name.dbf' resize 10240m [autoextend on] [next 100m] [maxsize 32000m];
+alter database tempfile 'path/file_name.dbf' resize 10240m [autoextend on] [next 100m] [maxsize 32000m];
+alter tablespace tablespace_name add datafile 'path/file_name.dbf' size 200M [autoextend on] [next 100m] [maxsize 32000m];
+alter tablespace tablespace_name add tempfile 'path/file_name.dbf' size 200M [autoextend on] [next 100m] [maxsize 32000m];
+
+select * from dba_users where username=upper('user_name');   --查看特定用户默认表空间和临时表空间
+select * from user_all_tables where table_name=upper('table_name');   --查看特定表的所属表空间
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+/*authorities [授权]*/
+CREATE USER
+DROP USER
+ALTER USER
+CREATE ANY VIEW
+DROP ANY VIEW
+EXP_FULL_DATABASE
+IMP_FULL_DATABASE
+DBA
+CONNECT
+RESOURCE
+CREATE SESSION
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+/*backups and recovery [备份/恢复]*/
+--备份
+exp user_name/password@db_name file=path/file_name.dmp 
+compress=y   --压缩(可选)
+full=y   --全库导出
+owner=(user_name1, user_name2, ..)   --导出某些用户的表
+tables=(table1, table2, ..)   --导出特定表
+tables=(table1, table2, ..) query=\"where_sql\"   --导出特定数据
+
+expdp user_name/password@db_name directory=dir_name dumpfile=file_name.dmp logfile=log_name.dmp --导出特定用户的表
+parallel=int_num   --并行进程数(可选)
+schemas=schemas_name   --指明模式(默认为当前用户模式)
+full=y   --全库导出
+tables=table1, table2, ..   --导出特定表
+tables=table1, table2, .. query=\"where_sql\"   --导出特定数据
+tablespaces=tablespaces_name1, tablespaces_name2, ..   --导出表空间
+
+--恢复
+imp user_name/password@db_name file=path/file_name.dmp 
+ignore=y   --覆盖已存在的表
+full=y    --恢复全库(默认)
+fromuser=fromuser_name touser=touser_name   --恢复某个用户的表
+tables=(table1, table2, ..)   --恢复特定表
+
+impdp user_name/password@db_name directory=dir_name dumpfile=file_name.dmp logfile=log_name.dmp --导入特定用户下
+schemas=schemas_name   --指明模式(默认为当前用户模式)
+tables=schemas_name.table_name remap_schema=old_schemas_name:new_schemas_name   --改变表的owner
+tablespaces=tablespaces_name   --导入表空间
+full=y   --导入整库
+table_exists_action=[skip|replace|append|truncate]   --表名冲突可选操作,默认为skip
+remap_tablespace=old_tablespace_name:new_tablespace_name   --更改表空间(可连续多个remap_tablespace)
+exclude=statistics    --不导入统计信息(导入的话会出错,并不知道为什么)
+parallel=int_num   --并行进程数(可选)
+
+--注意
+expdp/impdp可能会报错"ORA-14102: only one LOGGING or NOLOGGING clause may be specified",解决方法为安装补丁8795792(具体安装方
+法请相信阅读补丁安装包里面的readme文件)
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+/*active commands [AC]*/
+tnsping connection_name   --测试tns连接是否正常，确定使用的tns配置文件
+create directory dir_name as 'path'   --创建逻辑目录
+grant read,write on directory dir_name to user_name
+desc table_name   --查看表结构
+exec SYS.DBMS_METADATA_UTIL.LOAD_STYLESHEETS   --重新加载元数据
+opatch lsinventory   --查看已安装补丁,要求配置ORACLE_HOME环境变量,然后source至ORACLE_HOME/OPatch目录下执行(将OPatch目录加入path也可)
+lsnrctl start   --启动监听器
+set oracle_sid=qtest   --EM启动需要的环境变量
+set oracle_unqname=qtest   --EM启动需要的环境变量
+emca -deconfig dbcontrol db   --删除EM配置
+emca -repos drop   --删除EM的repository
+emca -repos create   --创建EM的repository
+emca -config dbcontrol db   --创建EM配置
+emctl start dbconsole   --启动EM服务
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+/*active points [AP]*/
+ORACLE_SID   --环境变量或者注册表键值,用于OS与实例交互(eg. ORACLE_SID=qtest)
+ORACLE_BASE   --Oracle公司所有产品安装目录(eg. ORACLE_BASE=D:\Programs\Oracle)
+ORACLE_HOME   --Oracle公司Oracle产品的目录(eg. ORACLE_HOME=D:\Programs\Oracle\app\rongji_qiu\product\11.2.0\dbhome_1)
+instance_name   --实例名(eg. instance_name=qtest)
+db_name   --数据库名(eg. db_name=test)
+db_domain   --数据库域(eg. db_domain=[host_name,ip])
+service_name   --对应于连接字符串中的服务名(eg. service_name=qtest)
+oracle_unqname   --用于取代ORACLE_SID(eg. oracle_unqname=qtest)
+TNS_ADMIN   --连接字符串地址(eg. TNS_ADMIN=%ORACLE_HOME%/NETWORK/ADMIN)
+数据文件大小限制=pow(2,22)*db_block_size
+""修饰的字段严格区分大小写
+EM使用HTTPS协议
+--------------------------------------------------------------------------------------------------------------------------------------------

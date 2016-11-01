@@ -1,0 +1,141 @@
+----------------------------------------------------------------------------------------------------------------------------------------
+/*active commands [AC]*/
+rpm 选项 参数
+选项 
+-a   --查询所有套件;
+-b<完成阶段><套件档>+或-t <完成阶段><套件档>+   --设置包装套件的完成阶段,并指定套件档的文件名称
+-c   --只列出组态配置文件，本参数需配合"-l"参数使用
+-d   --只列出文本文件，本参数需配合"-l"参数使用
+-e<套件档>或--erase<套件档>   --删除指定的套件
+-f<文件>+   --查询拥有指定文件的套件
+-h或--hash   --套件安装时列出标记
+-i   --显示套件的相关信息
+-i<套件档>或--install<套件档>   --安装指定的套件档
+-l   --显示套件的文件列表
+-p<套件档>+   --查询指定的RPM套件档
+-q   --使用询问模式,当遇到任何问题时,rpm指令会先询问用户
+-R   --显示套件的关联性信息
+-s   --显示文件状态，本参数需配合"-l"参数使用
+-U<套件档>或--upgrade<套件档>   --升级指定的套件档
+-v   --显示指令执行过程
+-vv   --详细显示指令执行过程,便于排错
+参数
+软件包   --指定要操纵的rpm软件包
+
+vi命令
+最后行方式命令
+: n1,n2 co n3   --将n1行到n2行之间的内容拷贝到第n3行下
+: n1,n2 m n3   --将n1行到n2行之间的内容移至到第n3行下
+: n1,n2 d   --将n1行到n2行之间的内容删除
+: w   --保存当前文件
+: e filename   --打开文件filename进行编辑
+: x   --保存当前文件并退出
+: q   --退出vi
+: q!   --不保存文件并退出vi
+: !command   --执行shell命令command
+: n1,n2 w!command   --将文件中n1行至n2行的内容作为command的输入并执行之,若不指定n1和n2,则表示将整个文件内容作为command的输入
+: r!command   --将命令command的输出结果放到当前行
+进入vi的命令
+vi filename   --打开或新建文件,并将光标置于第一行首
+vi +n filename   --打开文件,并将光标置于第n行首
+vi + filename   --打开文件,并将光标置于最后一行首;
+vi +/pattern filename   --打开文件,并将光标置于第一个与pattern匹配的串处
+vi -r filename   --在上次正用vi编辑时发生系统崩溃,恢复filename
+vi filename....filename   --打开多个文件,依次进行编辑
+
+du 选项 参数
+选项
+-h   --以人类可读的方式显示
+-a   --显示目录占用的磁盘空间大小,还要显示其下目录和文件占用磁盘空间的大小
+-s   --显示目录占用的磁盘空间大小,不要显示其下子目录和文件占用的磁盘空间大小
+-c   --显示几个目录或文件占用的磁盘空间大小,还要统计它们的总和
+--apparent-size   --显示目录或文件自身的大小
+-l   --统计硬链接占用磁盘空间的大小
+-L   --统计符号链接所指向的文件占用的磁盘空间大小
+参数
+目录名   --具体个数根据选项而定
+null    --针对当前目录下内容
+
+tar 选项 参数
+选项
+-c   --建立一个压缩文件的参数指令(create 的意思)
+-x   --解开一个压缩文件的参数指令 
+-t   --查看tarfile里面的文件
+-z   --指明具有gzip的属性
+-j   --指明具有bzip2的属性
+-v   --压缩的过程中显示文件
+-f   --使用档名,请留意,在f之后要立即接档名,不能再加参数
+-p   --使用原文件的原来属性(属性不会依据使用者而变)
+-P   --可以使用绝对路径来压缩
+-N   --比后面接的日期(yyyy/mm/dd)还要新的才会被打包进新建的文件中
+--exclude file_name   --在压缩的过程中,不要将file_name打包
+参数
+文件与目录
+
+cat filename|grep "i686"|less[more]   --查看文件里面包含某个字段的所有行
+tail -f filename   --刷新显示文件末尾10行
+tail -n 20 filename   --显示文件末尾20行
+Ctrl+C   --退出tail
+
+chkconfig --list   --查看所有服务在各个运行基本下面的状态
+service service_name status   --查看服务状态
+service service_name start   --开启服务s
+service service_name stop   --关闭服务
+service service_name restart   --重启服务
+
+ls -l   --显示文件权限
+ls -a   --查看所有文件
+chmod -R 777 [floder_name,file_name,null]   --递归赋权
+
+free   --查看当前内存使用状态
+fdisk -l   --查看当前分区情况
+fdisk /dev/sda   --新建分区或者更改分区
+parted /dev/sda   --新建分区或者更改分区(进入后"print list"命令用于显示分区列表)
+df -h   --查看各分区使用情况
+
+--清空文件命令
+: > filename #其中的 : 是一个占位符, 不产生任何输出.
+> filename
+echo "" > filename
+echo /dev/null > filename
+echo > filename
+cat /dev/null > filename
+
+--开放端口
+/sbin/iptables -I INPUT -p tcp --dport port -j ACCEPT
+/etc/rc.d/init.d/iptables save
+/etc/rc.d/init.d/iptables restart
+
+pvdisplay   --显示物理卷
+pvcreate /dev/sda3   --创建物理卷
+vgdisplay   --显示逻辑卷组信息
+vgcreate vg_name volume_name   --创建逻辑卷组
+vgextend vg_name /dev/sda3   --扩展逻辑卷组
+vgreduce vg_name /dev/sda3   --收缩逻辑卷组
+vgscan -v   --显示已有逻辑卷组
+lvcreate -L size(M) vg_name -n lv_name   --创建逻辑卷
+lvextend -L +size(G/M) /dev/vg_name/lv_name   --扩展逻辑卷
+lvreduce -L -size(G/M) /dev/vg_name/lv_name   --收缩逻辑卷
+resize2fs -p /dev/vg_name/lv_name   --重置逻辑卷大小(针对ext2/ext3/ext4文件系统)
+e2fsck -a -y /dev/hda3   --检查修复分区
+
+rm -rf [floder,file]   --递归删除
+mount ext3 /dev/hda5 /mnt/newhome   --挂载分区
+umount /dev/hda5   --卸载分区
+mkfs -t ext3 /dev/sda5   --创建文件系统(格式化)
+mklost+found   --创建lost+found文件夹
+find . -depth -print0|cpio --null --sparse -pvd /mnt/newhome/   --copy整个文件夹
+----------------------------------------------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------------------------------------------
+/*配置文件 [配置]*/
+/etc/fstab    --开机挂载设置
+----------------------------------------------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------------------------------------------
+/*名词解释 [名词]*/
+PV   --Physical Volume,物理卷,处于LVM最底层,可以是物理硬盘或者分区     
+PE   --Physical Extend,物理区域,PV中可以用于分配的最小存储单元,可以在创建PV的时候指定,如1M/2M/4M/8M/32M/64M等,组成同一VG中所有PV的PE大小应该相同     
+VG   --Volume Group,卷组,建立在PV之上,可以含有一个到多个PV   
+LV   --Logical Volume,逻辑卷,建立在VG之上,相当于原来分区的概念,不过大小可以动态改变
+----------------------------------------------------------------------------------------------------------------------------------------

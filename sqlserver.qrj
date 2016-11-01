@@ -1,0 +1,24 @@
+--------------------------------------------------------------------------------------------------------------------------------------------
+/*common SQL [SQL]*/
+select * from ::fn_helpcollations();   --get all the supported ordering rules;
+alter database database_name collate ordering_rule;   --更改数据库排序规则
+select serverproperty('Collation') as ordering_rule;
+select serverproperty('SqlCharSetName') as char_set;
+
+select a.name 'table_name', b.name 'column_name', b.collation 'ordering_rule' 
+from db_name.dbo.sysobjects a inner join db_name.dbo.syscolumns b 
+on a.id = b.id where b.collation = 'Chinese_PRC_CS_AS' and a.xtype = 'U';   --查看字段的排序规则
+
+alter table table_name alter column column_name xxx collate Chinese_PRC_CS_AS xxx;   --更改某列的排序规则
+exec sp_help table_name;   --view table structure
+select * from sys.sysindexes where id = object_id(table_name);   --查看表上索引
+drop index index_name on table_name;   --删除索引
+create unique [nonclustered/clustered] index index_name on table_name(column1, column2, ...);   --新建索引
+alter table table_name drop constraint constraint_name;   --删除约束
+alter table table_name add constraint constraint_name primary key(column1, column2, ...);   --新建主键约束
+select * from sysobjects where parent_obj in (select id from sysobjects where name='table_name') and xtype='pk';   --查看表的主键
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+/*/
+--------------------------------------------------------------------------------------------------------------------------------------------
