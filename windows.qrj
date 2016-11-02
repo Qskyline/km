@@ -18,5 +18,5 @@ sc stop 服务名
 sc delete 服务名   --删除服务
 netsh winsock reset   --重置winsock接口
 wmic environment where name="PATH" get UserName,VariableValue
-wmic environment where name="os" set VariableValue="Windows_NT" 
+wmic environment where name="os" set VariableValue="Windows_NT"
 --------------------------------------------------------------------------------------------------------------------------------------------

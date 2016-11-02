@@ -10,15 +10,66 @@ from db_name.dbo.sysobjects a inner join db_name.dbo.syscolumns b
 on a.id = b.id where b.collation = 'Chinese_PRC_CS_AS' and a.xtype = 'U';   --查看字段的排序规则
 
 alter table table_name alter column column_name xxx collate Chinese_PRC_CS_AS xxx;   --更改某列的排序规则
-exec sp_help table_name;   --view table structure
 select * from sys.sysindexes where id = object_id(table_name);   --查看表上索引
 drop index index_name on table_name;   --删除索引
 create unique [nonclustered/clustered] index index_name on table_name(column1, column2, ...);   --新建索引
 alter table table_name drop constraint constraint_name;   --删除约束
 alter table table_name add constraint constraint_name primary key(column1, column2, ...);   --新建主键约束
 select * from sysobjects where parent_obj in (select id from sysobjects where name='table_name') and xtype='pk';   --查看表的主键
+
+--删除维护计划(之后要执行删除作业操作)
+use msdb
+declare @plan_name varchar(100)
+set @plan_name = 'plan_name'
+delete sysmaintplan_subplans from sysmaintplan_subplans as subplans 
+inner join sysmaintplan_plans as plans on plans.id=subplans.plan_id 
+where plans.name=@plan_name   --删除子计划
+delete sysmaintplan_log from sysmaintplan_log as planlog 
+inner join sysmaintplan_plans as plans on plans.id=planlog.plan_id 
+where plans.name=@plan_name   --删除计划日志
+delete from sysmaintplan_plans where name=@plan_name;   --删除计划
+
+--删除作业
+use msdb
+declare @job_name varchar(100)
+set @job_name = 'jobName'
+delete sysmaintplan_log from sysmaintplan_subplans as subplans
+inner join sysjobs_view as jobs on subplans.job_id = jobs.job_id
+inner join sysmaintplan_log as log on subplans.subplan_id =log.subplan_id
+where jobs.name = @job_name   --删除计划日志
+delete sysjobschedules from sysjobs_view jobs
+inner join sysjobschedules schedules on jobs.job_id=schedules.job_id 
+where jobs.name=@job_name   --删除作业执行计划
+delete sysmaintplan_subplans from sysmaintplan_subplans as subplans
+inner join sysjobs_view as jobs on subplans.job_id = jobs.job_id
+where jobs.name = @job_name   --删除子计划
+delete from sysjobs_view where name = @job_name;   --删除作业
+
+--一致化serverproperty('servername')和@@servername
+if serverproperty('servername')<>@@servername    
+begin
+    declare @server sysname    
+    set @server=@@servername     
+    exec sp_dropserver @server=@server  
+    set @server=cast(serverproperty('servername') as sysname)    
+    exec sp_addserver @server=@server, @local='LOCAL'
+end  
+use master  
+select @@servername, serverproperty('servername')
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------SQL Server Management Studio------------------------------------------------
+/*active points [AP]*/
+sqlserver 2005及以后,不允许直接更新系统表,即'allow updates'属性的值须配置为0
+如何开启以"Windows 身份验证"登陆sqlserver数据库：打开SQL Server Configuration Manager工具->点击"SQL Server 服务"选项->
+                                                 打开"SQL Server (实例名)"服务的属性界面->切换到属性界面的高级选项卡->
+                                                 在"启动参数"一项的最后加上参数";-m"->重启该服务->以管理员身份运行工具
+                                                 SQL Server Management Studio->以"Windows 身份验证"登陆sqlserver数据库
 --------------------------------------------------------------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------------------------------------------------------------------
-/*/
+/*active commands [AC]*/
+exec sys.sp_configure 'allow updates' 0   --配置'allow updates'属性的值为0
+exec sys.sp_configure 'allow updates'   --查看配置'allow updates'属性的值
+exec sp_help table_name;   --view table structure
 --------------------------------------------------------------------------------------------------------------------------------------------

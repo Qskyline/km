@@ -15,7 +15,7 @@ select * from user_tab_columns where Table_Name='table_name';
 alter user user_name identified by password;   --改密码
 
 select ucc.*, uc.constraint_type from user_cons_columns ucc, user_constraints uc 
-where ucc.constraint_name = uc.constraint_name and uc.table_name = '';   --查看约束
+where ucc.constraint_name=uc.constraint_name and uc.table_name='';   --查看约束
 
 grant authority_name1, authority_name2, .. to user_name;   --授权
 create table table_name(columns_info) tablespace tablespace_name;   --在特定表空间上创建表
@@ -47,9 +47,9 @@ from
 (select tablespace_name,round(Sum(bytes)/(1024*1024),2) Space,Sum(blocks) blocks from dba_temp_files group by tablespace_name) d,
 (select tablespace_name,round(Sum(bytes_used)/(1024*1024),2) used_space,round(Sum(bytes_free)/(1024*1024),2) free_space from v$temp_space_header group by tablespace_name) f
 where d.tablespace_name=f.tablespace_name(+)  
-order by 5 desc;   --查看数据库所有表空间
+order by 5 desc;   --查看数据库所有表空间使用情况
 
-select file_name,tablespace_name, bytes from dba_data_files;   --查看表空间和文件的对应关系
+select file_name,tablespace_name, bytes from dba_data_files;   --查看表空间和文件(含路径)的对应关系
 select file_name,tablespace_name, bytes from dba_temp_files;
 
 --修改表空间大小
@@ -60,6 +60,9 @@ alter tablespace tablespace_name add tempfile 'path/file_name.dbf' size 200M [au
 
 select * from dba_users where username=upper('user_name');   --查看特定用户默认表空间和临时表空间
 select * from user_all_tables where table_name=upper('table_name');   --查看特定表的所属表空间
+select count(*) from v$process;   --查看当前进程数
+select count(*) from v$session;   --查看当前会话数
+select username,program,machine,status from v$session;   --查看当前会话信息
 --------------------------------------------------------------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------------------------------------------------------------------
@@ -133,6 +136,9 @@ emca -repos drop   --删除EM的repository
 emca -repos create   --创建EM的repository
 emca -config dbcontrol db   --创建EM配置
 emctl start dbconsole   --启动EM服务
+!oerr ora 07391   --查看详细ORA报错信息
+startup pfile=/path/file_name    --使用指定pfile配置文件启动数据库
+startup spfile=/path/file_name    --使用指定spfile配置文件启动数据库
 --------------------------------------------------------------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------------------------------------------------------------------
@@ -149,4 +155,72 @@ TNS_ADMIN   --连接字符串地址(eg. TNS_ADMIN=%ORACLE_HOME%/NETWORK/ADMIN)
 数据文件大小限制=pow(2,22)*db_block_size
 ""修饰的字段严格区分大小写
 EM使用HTTPS协议
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+/*归档空间相关操作 [归档]*/
+--数据库开启归档模式
+set ORACLE_SID=instance_name   --设置要操作的数据库实例
+sqlplus / as sysdba
+alert system checkpoint   --保存一下检查点
+shutdown immediate
+startup mount
+archive log list;[select log_mode from v$database;]   --查询数据库归档模式
+alter database archivelog;   --更改数据库归档模式为ARCHIVELOG
+alter database open;
+
+--数据库关闭启归档模式
+set ORACLE_SID=instance_name   --设置要操作的数据库实例
+sqlplus / as sysdba
+shutdown immediate
+startup mount
+archive log list;[select log_mode from v$database;]   --查询数据库归档模式
+alter database noarchivelog;   --更改数据库归档模式为NOARCHIVELOG
+alter database open;
+
+--归档空间整理
+set ORACLE_SID=instance_name   --设置要操作的数据库实例
+show parameter db_recovery_file;[select * from v$recovery_file_dest;]   --查看归档空间信息
+alter system set db_recovery_file_dest_size=20G scope=both;   --增大归档空间
+select * from v$archived_log;   --查看归档日志信息
+RMAN TARGET username/password@instance_name   --rman登陆数据库实例
+RMAN> list archivelog all;   --查看归档日志的状态
+RMAN> list backup of archivelog all;   --列出已备份的归档日志
+RMAN> backup format 'D:\Data\Oracle\backup\log_t%t_s%s_p%p' archivelog all;   --全备份归档日志
+RMAN> delete archivelog all completed before 'SYSDATE-7';   --删除7天前归档日志
+RMAN> restore archivelog all;   --恢复全部归档日志文件
+RMAN> restore archivelog from logseq 5 until logseq 8;   --只恢复5到8这四个归档日志文件
+RMAN> restore archivelog sequence between 5 and 8;   --只恢复5到8这四个归档日志文件
+RMAN> restore archivelog from logseq 5;   --恢复从第5个归档日志起
+RMAN> restore archivelog low logseq 5;   --恢复从第5个归档日志起
+RMAN> restore archivelog until logseq 5;   --恢复到第5个日志文件为止
+RMAN> restore archivelog high logseq 5;   --恢复到第5个日志文件为止
+RMAN> restore archivelog from time 'sysdate-7';   --恢复7天内的归档日志
+RMAN> run
+      {   
+          allocate channel ci type disk;
+          set archivelog destination to 'd:\backup';
+          restore archivelog all;
+          release channel ci;
+      };  --改变归档日志的恢复路径
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+/*oracle系统参数修改标准流程 [系统参数]*/
+echo $ORACLE_SID   --确任即将登陆的数据库SID
+select instance_name from v$instance;   --确认已登陆的数据库实例
+show parameter spfile[pfile];   --查看数据库启动配置文件类型和路径,如果使用pfile配置启动,
+                                --则无法确认pfile文件路径,一般认为此pfile路径为Oralce默认
+                                --的pfile存储路径
+show parameter parameter_name;   --查看需要改动的配置参数的当前值
+select value from v$parameter where name='parameter_name';   --查看需要改动的配置参数的当前值
+strings path/spfile_name;   --查看需要改动的配置参数的当前值
+create pfile='path/pfile_bak.ora' from spfile;   --将spfile备份为pfile,如果用pfile启动,直接copy备份即可
+alter system set parameter_name=parameter_value scope=spfile;   --"parameter_name"的值包括但不限于以下值[memory_target,sga_target,sga_max_size,processes]
+                                                                --scope的可选值为[memory,spfile,both],有些属性只能更改到spfile文件中
+                                                                --使用pfile文件启动的实例,可以关闭实例然后直接修改pfile文件
+alert system checkpoint   --保存一下检查点
+shutdown immediate   --关闭数据库(并非关闭实例),在内存中更改的参数不需此操作,有些参数只能更改到spfile文件
+startup   --开启数据库
+create spfile from pfile='path/pfile_bak.ora';   --错误更改参数时恢复spfile文件
 --------------------------------------------------------------------------------------------------------------------------------------------
