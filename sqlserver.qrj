@@ -56,9 +56,13 @@ begin
 end  
 use master  
 select @@servername, serverproperty('servername')
+
+SELECT * FROM sysobjects WHERE NAME='对象名' xtype='类型标识';   --常用类型标识:(C,CHECK约束),(F,FOREIGN KEY约束),(PK,PRIMARY KEY约束),
+																 --(S,系统表),(U,用户表),(V,视图);查看表,查看视图,查看约束
+select * from sysindexes where id=object_id('表名') and name='索引名';   --查看索引
 --------------------------------------------------------------------------------------------------------------------------------------------
 
---------------------------------------------------------------------------------------------SQL Server Management Studio------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------
 /*active points [AP]*/
 sqlserver 2005及以后,不允许直接更新系统表,即'allow updates'属性的值须配置为0
 如何开启以"Windows 身份验证"登陆sqlserver数据库：打开SQL Server Configuration Manager工具->点击"SQL Server 服务"选项->

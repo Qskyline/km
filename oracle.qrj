@@ -8,12 +8,16 @@ select * from dba_views;   --全库所有视图
 select * from all_views;   --当前用户能够看到的视图
 select * from user_views;   --当前用户的视图
 
+select * from dba_objects;   --全库所有对象
+select * from all_objects;   --当前用户能够看到的对象
+select * from user_objects;   --当前用户的对象
+
 select * from dba_tab_columns where Table_Name='table_name';    --查看表中字段
 select * from all_tab_columns where Table_Name='table_name'; 
 select * from user_tab_columns where Table_Name='table_name'; 
 
+select * from user_indexes where table_name=upper('table_name');   --查看表上索引
 alter user user_name identified by password;   --改密码
-
 select ucc.*, uc.constraint_type from user_cons_columns ucc, user_constraints uc 
 where ucc.constraint_name=uc.constraint_name and uc.table_name='';   --查看约束
 
@@ -60,9 +64,58 @@ alter tablespace tablespace_name add tempfile 'path/file_name.dbf' size 200M [au
 
 select * from dba_users where username=upper('user_name');   --查看特定用户默认表空间和临时表空间
 select * from user_all_tables where table_name=upper('table_name');   --查看特定表的所属表空间
+
+declare
+userName varchar(20):='skyline';
+tablespace_name varchar(50);  
+user_name varchar(20);  
+cursor tablespace_cur(user_name in varchar) is
+  select a.tablespace_name tablespace_name, b.owner owner
+  from dba_segments a
+  inner join dba_objects b on a.segment_name=b.object_name
+  where b.owner=upper(user_name) and a.owner=upper(user_name)
+  group by b.OWNER, a.tablespace_name
+  union all
+  select temporary_tablespace tablespace_name, username owner
+  from dba_users
+  where username=upper(user_name);
+begin
+  open tablespace_cur(userName);
+  loop
+    fetch tablespace_cur into tablespace_name,user_name;
+    exit when tablespace_cur%notfound;
+    dbms_output.put_line(tablespace_name||'  '||user_name);
+  end loop;
+  close tablespace_cur;
+end;   --查看特定用户对应的表空间
+
 select count(*) from v$process;   --查看当前进程数
 select count(*) from v$session;   --查看当前会话数
 select username,program,machine,status from v$session;   --查看当前会话信息
+drop index index_name;   --删除索引
+drop table table_name;   --删除表
+truncate table table_name;   --清空表
+alter tabel table_name modify column_name null;   --更新列为可空
+
+select b.username, b.sid, b.serial#, b.logon_time 
+from v$locked_object a, v$session b 
+where a.session_id=b.sid order by b.logon_time;   --查看当前锁
+
+alter system kill session 'sid,serial#';   --结束当前某个锁
+
+SELECT
+  a.program,
+  b.spid,
+  c.sql_text,
+  c.sql_id
+FROM
+  v$session a,
+  v$process b,
+  v$sqlarea c
+WHERE
+  a.paddr = b.addr
+AND a.sql_hash_value = c.hash_value
+AND a.username IS NOT NULL;   --查看当前正在执行的SQL
 --------------------------------------------------------------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------------------------------------------------------------------
@@ -90,6 +143,7 @@ owner=(user_name1, user_name2, ..)   --导出某些用户的表
 tables=(table1, table2, ..)   --导出特定表
 tables=(table1, table2, ..) query=\"where_sql\"   --导出特定数据
 
+create directory dir_name as 'd:\test\dump';
 expdp user_name/password@db_name directory=dir_name dumpfile=file_name.dmp logfile=log_name.dmp --导出特定用户的表
 parallel=int_num   --并行进程数(可选)
 schemas=schemas_name   --指明模式(默认为当前用户模式)
@@ -139,6 +193,7 @@ emctl start dbconsole   --启动EM服务
 !oerr ora 07391   --查看详细ORA报错信息
 startup pfile=/path/file_name    --使用指定pfile配置文件启动数据库
 startup spfile=/path/file_name    --使用指定spfile配置文件启动数据库
+set serveroutput on   --打开oracle自带的输出方法dbms_output,只能在命令窗口执行
 --------------------------------------------------------------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------------------------------------------------------------------
