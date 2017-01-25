@@ -19,4 +19,8 @@ sc delete 服务名   --删除服务
 netsh winsock reset   --重置winsock接口
 wmic environment where name="PATH" get UserName,VariableValue
 wmic environment where name="os" set VariableValue="Windows_NT"
+systeminfo   --查看机器配置信息
+systeminfo   --系统信息
+mstsc   --远程桌面连接
+services.msc   --打开服务界面
 --------------------------------------------------------------------------------------------------------------------------------------------

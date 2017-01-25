@@ -3,11 +3,11 @@
 对接人：崔校程
 注意：对以下所述若有不解和疑问,请及时反馈询问！
 
-1.无法启用(XXX)-找到空值
+1.无法启用(XXX)-找到空值(升级前执行)
   涉及的表和字段：T_IM_SALEISSUEENTRY.FAMOUNT
   处理方式：update T_IM_SALEISSUEENTRY set FAMOUNT=0 where FAMOUNT is null;
 
-2.要减小精度或标度,则要修改的列必须为空
+2.要减小精度或标度,则要修改的列必须为空(请在报错之后执行此步骤的操作)
   涉及的表和字段：t_ar_otherbill.FTOTALBADAMOUNTLOCAL,t_ap_otherbill.FAMOUNT,T_IM_SALEISSUEENTRY.FBASEQTY
   处理方式：备份清空原表待升级之后还原(以表t_ar_otherbill为例)
   			   SELECT count(*) from t_ar_otherbill;--确认表中数据量
@@ -18,19 +18,21 @@
            drop table t_ar_otherbill_back;--删除备份表,请谨慎操作
            注：敏感操作请谨慎执行,3个表都要操作
 
-3.无法插入NULL值
+3.无法插入NULL值(升级前执行)
   涉及的表和字段：T_MBG_BGCONTROLRULE.FSCENARIONUMBER
-  处理方式：暂时修改此字段为允许插入null值,升级完成之后更新为默认值
-           alter tabel T_MBG_BGCONTROLRULE modify FSCENARIONUMBER null;--升级前执行
-           select count(*) from T_MBG_BGCONTROLRULE where FSCENARIONUMBER is null;--升级完成后执行,确认要修改的行数
-           update table T_MBG_BGCONTROLRULE set FSCENARIONUMBER='' where FSCENARIONUMBER is null;--升级完成后执行
-           alter table T_MBG_BGCONTROLRULE modify FSCENARIONUMBER not null;--升级完成后执行(如果此步骤报错"该列已经为not null",忽略即可)
+  涉及的脚本：ALTER TABLE T_MBG_BgControlRule add default '' for FScenarioNumber ; 
+              --$eas_home\eas\server\properties\upgradescript\eas\8_1_0to8_2_0\8_2_0_feature\eas\sem\tbg\pubdata\datatask\70control_init_table.ksql
+  处理方式：修改涉及的脚本为：ALTER TABLE T_MBG_BgControlRule add default ' ' for FScenarioNumber ; 
 
-4.表丢失
+4.表丢失(请在报错之后执行此步骤的操作)
   涉及的表：t_gl_voucherlog
-  处理方式：从正式库备份还原此表(确定此表确实缺失的情况下操作)
+  涉及的脚本：
+            If not exists (select * from KSQL_USERCOLUMNS where KSQL_COL_NAME ='FVeCount' and KSQL_COL_TABNAME='T_GL_Voucherlog')
+            alter table t_gl_voucherlog add ( FVeCount int);
+            --$eas_home\eas\server\properties\upgradescript\eas\7_0_3to7_0_5\PTMEAS750\fi\PT053153_fi_gl_addBalanceColmun.sql
+  处理方式：屏蔽（注意在第二次升级的时候屏蔽，第一次升级请勿做屏蔽操作）
 
-5.违反唯一约束条件
+5.违反唯一约束条件(升级前执行)
   涉及的表：t_gl_voucher,t_bc_billtype,T_BAS_SysMenuItem,T_BAS_SysMenuItem
   涉及的脚本：if not exists (select * from t_bc_billtype where FId='UcN+cgExEADgAAAIwKjIWG8A6j8=' and FNumber='BizAccountOut')
               insert into t_bc_billtype(fenable,findex,fname_l2,fnumber,fid,FReleaseWebService) values(0,70,'对外报销单','BizAccountOut','UcN+cgExEADgAAAIwKjIWG8A6j8=',0);
@@ -47,14 +49,14 @@
               --$eas_home\eas\server\properties\upgradescript\eas\7_0_3to7_0_5\PTMEAS750\basedata\PT051759_basedata_update_sysmenu.sql
   处理方式:屏蔽
 
-6.视图不适用于此处
+6.视图不适用于此处(请在报错之后执行此步骤的操作)
   涉及的表：t_gl_assistbalance
   涉及的脚本：if not exists (select * from KSQL_INDEXES where KSQL_INDNAME ='IX_GL_ASSBALGRPACC') 
               create INDEX IX_GL_ASSBALGRPACC on t_gl_assistbalance(FACCOUNTID, FASSISTGRPID);
               --$eas_home\eas\server\properties\upgradescript\eas\7_0_5to7_5_0\PTMEAS753\PT067434_bd_account_index.ksql
   处理方式：此为脚本bug,分析后确定可直接屏蔽(第二次升级才会出现此问题,第一次升级请勿屏蔽)
 
-7.升级卡住
+7.升级卡住(升级完成之后手动执行)
   涉及的表：T_CL_WriteOffRecord
   涉及的脚本：update T_CL_WriteOffRecord T set
 			  (FAccountViewInId,FAccountViewOutId)=
@@ -150,6 +152,8 @@
   涉及的表：T_BAS_SysMenuItem
   涉及的脚本：IF NOT EXISTS(select * from t_bas_sysmenuitem where FID='+Yc2W5bpSx2yjRRDEJtjQhdCz6U=')
               insert into T_BAS_SysMenuItem (FID , FCreatorID , FCreateTime , FLastUpdateUserID , FLastUpdateTime , FControlUnitID , FName_L1 , FName_L2 , FName_L3 , FNumber , FDescription_L1 , FDescription_L2 , FDescription_L3 , FSimpleName , FIsLeaf , FLevel , FLongNumber , FDisplayName_L1 , FDisplayName_L2 , FDisplayName_L3 , FOrder , FImagePath , FVisible , FEnabled , FUiClassName , FUiClassParam , FUiOprt , FOpenMethod , FShortcutCode , FIsReport , FParent , FFunction , FIndustry , FNoSuit)  values( '+Yc2W5bpSx2yjRRDEJtjQhdCz6U=' , '00000000-0000-0000-0000-00000000000013B7DE7F' , {ts'2009-12-02 17:41:52'} , '00000000-0000-0000-0000-00000000000013B7DE7F' , {ts'2009-12-02 17:50:10'} , '00000000-0000-0000-0000-000000000000CCE7AED4' , NULL , N'奖惩级别' , N'獎懲級別' , '130268' , NULL , NULL , NULL , NULL , 1 , 3 , '13HumanResource!1302BaseInfo!130268' , NULL , N'人力资源管理_基础资料_奖惩级别' , N'人力資源管理_基礎資料_獎懲級別' , '255' , NULL , 1 , 1 , 'com.kingdee.eas.hr.state.client.RewardPunishLevelListUI' , '' , '' , 0 , 'BF68' , 0 , '47cf8e49-0106-1000-e000-6a74c0a813f4FD37DC9F' , '504e4d9d-0101-1000-e000-0016c0a813cbPERMITEM' , 0 , NULL);
+              IF NOT EXISTS(select * from t_bas_sysmenuitem where FID='RGdg0riORouCowCpfqloFBdCz6U=' and FParent ='47cf8e49-0106-1000-e000-6a74c0a813f4FD37DC9F' )
+              insert into T_BAS_SysMenuItem (FID , FCreatorID , FCreateTime , FLastUpdateUserID , FLastUpdateTime , FControlUnitID , FName_L1 , FName_L2 , FName_L3 , FNumber , FDescription_L1 , FDescription_L2 , FDescription_L3 , FSimpleName , FIsLeaf , FLevel , FLongNumber , FDisplayName_L1 , FDisplayName_L2 , FDisplayName_L3 , FOrder , FImagePath , FVisible , FEnabled , FUiClassName , FUiClassParam , FUiOprt , FOpenMethod , FShortcutCode , FIsReport , FParent , FFunction , FIndustry , FNoSuit)  values( 'RGdg0riORouCowCpfqloFBdCz6U=' , '00000000-0000-0000-0000-00000000000013B7DE7F' , {ts'2009-12-02 17:36:17'} , '00000000-0000-0000-0000-00000000000013B7DE7F' , {ts'2009-12-02 17:50:10'} , '00000000-0000-0000-0000-000000000000CCE7AED4' , NULL , N'档案类型' , N'檔案類型' , '130262' , NULL , NULL , NULL , NULL , 1 , 3 , '13HumanResource!1302BaseInfo!SchoolTypeBehind' , NULL , N'人力资源管理_基础资料_档案类型' , N'人力資源管理_基礎資料_檔案類型' , '255' , NULL , 1 , 1 , 'com.kingdee.eas.hr.emp.client.ArchivesTypeListUI' , '' , '' , 0 , 'BF62' , 0 , '47cf8e49-0106-1000-e000-6a74c0a813f4FD37DC9F' , '504e4d9d-0101-1000-e000-0016c0a813cbPERMITEM' , 0 , NULL);
               --\eas\7_0_2to7_0_3\PTM047402\.\hr\emp\hr_emp_update.sql
   
               insert into t_bas_sysmenuitem(FID, FCreatorID, FCreateTime, FLastUpdateUserID, FLastUpdateTime, FControlUnitID, FName_L1, FName_L2, FName_L3, FNumber, FDescription_L1, FDescription_L2, FDescription_L3, FSimpleName, FIsLeaf, FLevel, FLongNumber, FDisplayName_L1, FDisplayName_L2, FDisplayName_L3, FOrder, FImagePath, FVisible, FEnabled, FUiClassName, FUiClassParam, FUiOprt, FOpenMethod, FShortcutCode, FIsReport, FParent, FFunction, FIndustry, FNoSuit) values('mAk9JPL6TOiSUpfuwc4DKBdCz6U=', '00000000-0000-0000-0000-00000000000013B7DE7F', {ts'2009-03-06 09:47:12'}, '00000000-0000-0000-0000-00000000000013B7DE7F', {ts'2009-08-03 09:47:16'}, '00000000-0000-0000-0000-000000000000CCE7AED4', null, N'不良品处理方式', N'不良品處理方式', N'QMBASEDATA06', null, null, null, null, 1, 3, N'0301MasterData!3BSAD!QMBASEDATA06', null, N'基础数据管理_辅助资料_不良品处理方式', N'基礎資料管理_輔助資料_不良品處理方式', N'255', null, 1, 1, N'com.kingdee.eas.qm.basedata.client.DPProcessModeListUI', null, null, 0, N'QMBASEDATA06', 0, '81798ee5-00ff-1000-e000-7054c0a8100dFD37DC9F', '2b05591d-544e-4148-bd3e-b96eab87bc91PERMITEM', 0, null);
@@ -224,6 +228,15 @@
   涉及的表：t_gl_voucherlog
   解决办法：首先确认此表是否存在，如不存在，请从正式环境备份还原此表至测试环境，如果存在请联系总部解决。
             SELECT * FROM sysobjects WHERE NAME='表名';--确认表是否存在
+            --如果正式环境也无此表,请执行以下脚本
+            IF NOT EXISTS (SELECT * FROM sysobjects sysobj WHERE SYSOBJ.NAME = 'T_GL_VOUCHERLOG')
+            BEGIN
+            EXEC('CREATE TABLE T_GL_VOUCHERLOG (FISASSIST INT, FVOUCHERID VARCHAR (44) COLLATE Chinese_PRC_CS_AS, FCREATETIME DATETIME, FACTION INT, FCOMPANYID VARCHAR (44) COLLATE Chinese_PRC_CS_AS, FPERIODID VARCHAR (44) COLLATE Chinese_PRC_CS_AS, FACCOUNTID VARCHAR (44) COLLATE Chinese_PRC_CS_AS, FCURRENCYID VARCHAR (44) COLLATE Chinese_PRC_CS_AS, FBALTYPE INT, FASSISTGRPID VARCHAR (44) COLLATE Chinese_PRC_CS_AS, FMEASUREUNITID VARCHAR (44) COLLATE Chinese_PRC_CS_AS, FDEBITFOR DECIMAL (19, 4) DEFAULT 0, FDEBITLOCAL DECIMAL (19, 4) DEFAULT 0, FDEBITRPT DECIMAL (19, 4) DEFAULT 0, FDEBITQTY DECIMAL (28, 10) DEFAULT 0, FSTANDARDDEBITQTY DECIMAL (28, 10) DEFAULT 0, FCREDITFOR DECIMAL (19, 4) DEFAULT 0, FCREDITLOCAL DECIMAL (19, 4) DEFAULT 0, FCREDITRPT DECIMAL (19, 4) DEFAULT 0, FCREDITQTY DECIMAL (28, 10) DEFAULT 0, FSTANDARDCREDITQTY DECIMAL (28, 10) DEFAULT 0, FMONTHPNLFOR DECIMAL (19, 4) DEFAULT 0, FMONTHPNLLOCAL DECIMAL (19, 4) DEFAULT 0, FMONTHPNLRPT DECIMAL (19, 4) DEFAULT 0, FISUPDATING INT DEFAULT 0)')
+            END;
+            IF NOT EXISTS (SELECT * FROM sysindexes sysind WHERE NAME = 'IX_VOUCHER_LOG')
+            BEGIN
+            EXEC('CREATE INDEX IX_VOUCHER_LOG ON T_GL_VOUCHERLOG (FISUPDATING, FCOMPANYID)')
+            END;
 
 8.无法对索引执行删除，因为它不存在，或者您没有所需的权限
   涉及的表和索引：T_GL_VOUCHERASSISTRECORD.IX_GL_VCHASSTRDGE,t_gl_voucherentry.IX_GL_VCHAACCT

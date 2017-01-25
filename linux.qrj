@@ -87,8 +87,13 @@ ls -l   --显示文件权限
 ls -a   --查看所有文件
 chmod -R 777 [floder_name,file_name,null]   --递归赋权
 
-free   --查看当前内存使用状态
+lscpu   --查看cpu的统计信息
+cat /proc/cpuinfo   --查看每个cpu信息
+cat /proc/meminfo   --查看内存详细使用
+free -m  --查看当前内存使用状态
 fdisk -l   --查看当前分区情况
+lsblk   --查看硬盘和分区分布
+lspci   --查看pci信息,即主板所有硬件槽信息
 fdisk /dev/sda   --新建分区或者更改分区
 parted /dev/sda   --新建分区或者更改分区(进入后"print list"命令用于显示分区列表)
 df -h   --查看各分区使用情况
@@ -131,6 +136,21 @@ scp /path/file_name root@ip:/path   --Linux系统间互拷文件
 ----------------------------------------------------------------------------------------------------------------------------------------
 /*配置文件 [配置]*/
 /etc/fstab    --开机挂载设置
+/etc/sysctl.conf
+	fs.file-max = 8192   --全局文件句柄最大限制
+/etc/security/limits.conf
+	* soft nofile 65536   --单进程全用户(*)最大文件句柄软限制
+	* hard nofile 65536   --单进程全用户(*)最大文件句柄硬限制
+/etc/pam.d/login
+	session required /lib/security/pam_limits.so   --The pam_limits PAM module sets limits on the system resources that 
+												   --can be obtained in a user-session. Users of uid=0 are affected by 
+												   --this limits, too. By default limits are taken from the /etc/security/limits.conf 
+												   --config file. Then individual *.conf files from the /etc/security/limits.d/ 
+												   --directory are read. The files are parsed one after another in the order of "C" locale. 
+												   --The effect of the individual files is the same as if all the files were concatenated 
+												   --together in the order of parsing. If a config file is explicitly specified with a module 
+												   --option then the files in the above directory are not parsed. The module must not be 
+												   --called by a multithreaded application.
 ----------------------------------------------------------------------------------------------------------------------------------------
 
 ----------------------------------------------------------------------------------------------------------------------------------------

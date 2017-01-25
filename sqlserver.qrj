@@ -60,6 +60,59 @@ select @@servername, serverproperty('servername')
 SELECT * FROM sysobjects WHERE NAME='对象名' xtype='类型标识';   --常用类型标识:(C,CHECK约束),(F,FOREIGN KEY约束),(PK,PRIMARY KEY约束),
 																 --(S,系统表),(U,用户表),(V,视图);查看表,查看视图,查看约束
 select * from sysindexes where id=object_id('表名') and name='索引名';   --查看索引
+
+--查看锁等待信息
+use master
+go
+create procedure sp_who_lock
+as
+begin
+declare
+    @spid int,
+    @bl int,
+    @intTransactionCountOnEntry int,
+    @intRowcount int,
+    @intCountProperties int,
+    @intCounter int
+
+create table #tmp_lock_who(
+    id int identity(1,1),
+    spid smallint,
+    bl smallint)
+
+IF @@ERROR<>0 RETURN @@ERROR
+
+insert into #tmp_lock_who(spid,bl)
+    select 0 ,blocked
+    from (select * from sysprocesses where blocked>0 ) a
+    where not exists(select * from (select * from sysprocesses where blocked>0 ) b where a.blocked=spid)
+union select spid,blocked from sysprocesses where blocked>0
+
+IF @@ERROR<>0 RETURN @@ERROR
+
+select @intCountProperties=Count(*), @intCounter=1 from #tmp_lock_who   --临时表的记录数
+
+IF @@ERROR<>0 RETURN @@ERROR   
+
+if @intCountProperties=0  
+select '未发现锁等待信息' as message  
+
+while @intCounter<=@intCountProperties   --循环展示数据
+begin
+    select @spid=spid, @bl=bl from #tmp_lock_who where Id=@intCounter   --取第一条记录
+    begin
+        if @spid=0
+            select '锁等待源头: '+CAST(@bl AS VARCHAR(10))+'进程号,其执行的SQL语法如下'  
+        else  
+            select '进程号SPID: '+CAST(@spid AS VARCHAR(10))+'被进程号SPID：'+CAST(@bl AS VARCHAR(10))+'阻塞,其当前进程执行的SQL语法如下'  
+        DBCC INPUTBUFFER (@bl)
+    end
+    set @intCounter=@intCounter+1   --循环指针下移
+end
+
+drop table #tmp_lock_who
+return 0
+end
 --------------------------------------------------------------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------------------------------------------------------------------

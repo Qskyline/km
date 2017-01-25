@@ -25,8 +25,10 @@ grant authority_name1, authority_name2, .. to user_name;   --授权
 create table table_name(columns_info) tablespace tablespace_name;   --在特定表空间上创建表
 select * from v$version;   --查看Oracle版本
 show parameter db_block_size;   --查看块大小
-create temporary tablespace tablespace_name tempfile 'path/file_name1.dbf' size 10240M, 'path/file_name2.dbf' size 10240M, ..;   --表空间
-create tablespace tablespace_name datafile 'path/file_name1.dbf' size 30720M, 'path/file_name2.dbf' size 30720M, ..;   --表空间
+create temporary tablespace tablespace_name tempfile 'path/file_name1.dbf' size 10240M, 'path/file_name2.dbf' size 10240M, ..;   --创建表空间
+create tablespace tablespace_name datafile 'path/file_name1.dbf' size 30720M, 'path/file_name2.dbf' size 30720M, ..;   --创建表空间
+create bigfile tablespace tablespace_name datafile '/path/file_name.dbf' size 32000m autoextend on;   --创建表空间
+create user user_name identified by password default tablespace 默认数据表空间名 temporary tablespace 默认临时表空间名;   --创建用户指定默认表空间
 
 select 
 	d.tablespace_name,
@@ -116,6 +118,60 @@ WHERE
   a.paddr = b.addr
 AND a.sql_hash_value = c.hash_value
 AND a.username IS NOT NULL;   --查看当前正在执行的SQL
+
+execute dbms_stats.gather_table_stats(upper('user_name'), upper('table_name'));   --更新表的统计信息
+
+begin
+dbms_stats.gather_schema_stats( 
+ownname=> upper('user_name'), --换为eas用户的名字
+cascade=> TRUE, 
+estimate_percent=> null, 
+degree=> 2, 
+no_invalidate=> DBMS_STATS.AUTO_INVALIDATE, 
+granularity=> 'AUTO', 
+method_opt=> 'FOR ALL COLUMNS SIZE AUTO', 
+options=> 'GATHER');   --更新某个用户的统计信息
+end;
+
+select segment_name, bytes/1024/1024 size(m) from user_segments where segment_name=upper('object_name');    --查看某个对象的大小
+
+select dbms_metadata.get_ddl('TABLE', upper('table_name'), upper('user_name')) from dual;   --查看某个表的定义sql
+
+SELECT 
+  'ALTER INDEX '||INDEX_NAME||' REBUILD TABLESPACE tablespace_name_new;'
+FROM 
+  DBA_INDEXES 
+WHERE 
+  TABLE_OWNER=upper('user_name') 
+  AND TABLESPACE_NAME=upper('tablespace_name_old');   --生成重建索引到另一个表空间(会删除原索引)的SQL
+
+SELECT
+  SEGMENT_TYPE,
+  SEGMENT_NAME,
+  TABLESPACE_NAME,
+  SUM(BYTES)/1024/1024 AS SEGMENT_SIZE
+FROM 
+  DBA_SEGMENTS
+WHERE 
+  TABLESPACE_NAME='tablespace_name'
+GROUP BY SEGMENT_TYPE,SEGMENT_NAME,TABLESPACE_NAME
+ORDER BY 4;   --查询表空间中对象
+
+alter tablespace rename tablespace_name_old to tablespace_name_new;   --重命名表空间
+alter database rename file 'path_old/db_file_old' to 'path_new/db_file_new';   --重命名数据文件,归档模式执行
+
+alter system set events='10231 trace name context forever,level 10';   --开启10231事件,绕过坏块
+alter system set events='10231 trace name context off';   --关闭10231事件
+
+alter table table_name allocate extent;   --生成空表的segment
+
+DROP USER user_name CASCADE;   --删除用户(级联删除用户下所有对象)
+
+alter database create [datafile,tempfile] 'path/file_name.dbf';   --创建数据文件,mount模式可执行
+alter database [datafile,tempfile] 'path/file_name.dbf' drop;   --删除数据文件,mount模式可执行
+alter database datafile 'path/file_name.dbf' [offline,online];   --修改数据文件状态,未开归档要在mount模式下执行
+alter tablespace tablespace_name [offline,online];   --修改表空间状态,mount模式可执行
+drop tablespace tablespace_name including contents and datafiles;   --删除表空间,包括其中的内容和数据文件,mount模式可执行
 --------------------------------------------------------------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------------------------------------------------------------------
@@ -135,6 +191,10 @@ CREATE SESSION
 
 --------------------------------------------------------------------------------------------------------------------------------------------
 /*backups and recovery [备份/恢复]*/
+SELECT * FROM V$NLS_PARAMETERS WHERE PARAMETER='NLS_CHARACTERSET';   --查询服务端字符集
+select userenv('LANGUAGE') from dual;   --查询服务端字符集
+export/set NLS_LANG=查询结果   --设置导出/导出所用客户端的字符集
+
 --备份
 exp user_name/password@db_name file=path/file_name.dmp 
 compress=y   --压缩(可选)
@@ -144,6 +204,7 @@ tables=(table1, table2, ..)   --导出特定表
 tables=(table1, table2, ..) query=\"where_sql\"   --导出特定数据
 
 create directory dir_name as 'd:\test\dump';
+grant read,write on directory dir_name to user_name;
 expdp user_name/password@db_name directory=dir_name dumpfile=file_name.dmp logfile=log_name.dmp --导出特定用户的表
 parallel=int_num   --并行进程数(可选)
 schemas=schemas_name   --指明模式(默认为当前用户模式)
@@ -151,6 +212,8 @@ full=y   --全库导出
 tables=table1, table2, ..   --导出特定表
 tables=table1, table2, .. query=\"where_sql\"   --导出特定数据
 tablespaces=tablespaces_name1, tablespaces_name2, ..   --导出表空间
+exclude=table:\"like \'VT%\'\",statistics   --排除某些表,统计信息
+job_name='job_name'   --声明作业名
 
 --恢复
 imp user_name/password@db_name file=path/file_name.dmp 
@@ -158,7 +221,11 @@ ignore=y   --覆盖已存在的表
 full=y    --恢复全库(默认)
 fromuser=fromuser_name touser=touser_name   --恢复某个用户的表
 tables=(table1, table2, ..)   --恢复特定表
+注意：revoke unlimited tablespace from user_name;   --执行之后可导入数据到对应用户的默认表空间
+      grant unlimited tablespace to user_name;   --导入完成后恢复用户权限
 
+create directory dir_name as 'd:\test\dump';
+grant read,write on directory dir_name to user_name;
 impdp user_name/password@db_name directory=dir_name dumpfile=file_name.dmp logfile=log_name.dmp --导入特定用户下
 schemas=schemas_name   --指明模式(默认为当前用户模式)
 tables=schemas_name.table_name remap_schema=old_schemas_name:new_schemas_name   --改变表的owner
@@ -166,7 +233,7 @@ tablespaces=tablespaces_name   --导入表空间
 full=y   --导入整库
 table_exists_action=[skip|replace|append|truncate]   --表名冲突可选操作,默认为skip
 remap_tablespace=old_tablespace_name:new_tablespace_name   --更改表空间(可连续多个remap_tablespace)
-exclude=statistics    --不导入统计信息(导入的话会出错,并不知道为什么)
+exclude=statistics    --不导入统计信息,导入的话必须保证服务端字符集与导入/导出所用客户端的字符集一致
 parallel=int_num   --并行进程数(可选)
 
 --注意
@@ -235,14 +302,19 @@ alter database open;
 
 --归档空间整理
 set ORACLE_SID=instance_name   --设置要操作的数据库实例
-show parameter db_recovery_file;[select * from v$recovery_file_dest;]   --查看归档空间信息
+show parameter db_recovery_file;   --查看归档空间信息
+select * from v$recovery_file_dest;   --查看归档空间信息
+select * from v$flash_recovery_area_usage;   --查看归档空间信息
 alter system set db_recovery_file_dest_size=20G scope=both;   --增大归档空间
 select * from v$archived_log;   --查看归档日志信息
 RMAN TARGET username/password@instance_name   --rman登陆数据库实例
 RMAN> list archivelog all;   --查看归档日志的状态
 RMAN> list backup of archivelog all;   --列出已备份的归档日志
 RMAN> backup format 'D:\Data\Oracle\backup\log_t%t_s%s_p%p' archivelog all;   --全备份归档日志
+RMAN> crosscheck archivelog all;   --检查控制文件和实际物理文件的差别
+RMAN> delete expired archivelog all;   --清除失效(文件不存在或者过期)归档
 RMAN> delete archivelog all completed before 'SYSDATE-7';   --删除7天前归档日志
+RMAN> delete archivelog until time 'sysdate';   --删除所有归档日志
 RMAN> restore archivelog all;   --恢复全部归档日志文件
 RMAN> restore archivelog from logseq 5 until logseq 8;   --只恢复5到8这四个归档日志文件
 RMAN> restore archivelog sequence between 5 and 8;   --只恢复5到8这四个归档日志文件
@@ -278,4 +350,14 @@ alert system checkpoint   --保存一下检查点
 shutdown immediate   --关闭数据库(并非关闭实例),在内存中更改的参数不需此操作,有些参数只能更改到spfile文件
 startup   --开启数据库
 create spfile from pfile='path/pfile_bak.ora';   --错误更改参数时恢复spfile文件
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+/*ORA-00600可尝试的解决方案 [ORA,00600]*/
+alter session set "_hash_join_enabled"=false;
+alter session set "_gby_hash_aggregation_enabled"=false;
+alter session set "_b_tree_bitmap_plans"=false;
+alter system set "_b_tree_bitmap_plans"=false;
+alter system set cursor_sharing=similar;
+alter system flush shared_pool;
 --------------------------------------------------------------------------------------------------------------------------------------------
