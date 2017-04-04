@@ -55,8 +55,8 @@ from
 where d.tablespace_name=f.tablespace_name(+)  
 order by 5 desc;   --查看数据库所有表空间使用情况
 
-select file_name,tablespace_name, bytes from dba_data_files;   --查看表空间和文件(含路径)的对应关系
-select file_name,tablespace_name, bytes from dba_temp_files;
+select file_name, tablespace_name, bytes from dba_data_files;   --查看表空间和文件(含路径)的对应关系
+select file_name, tablespace_name, bytes from dba_temp_files;
 
 --修改表空间大小
 alter database datafile 'path/file_name.dbf' resize 10240m [autoextend on] [next 100m] [maxsize 32000m];
@@ -172,6 +172,17 @@ alter database [datafile,tempfile] 'path/file_name.dbf' drop;   --删除数据�
 alter database datafile 'path/file_name.dbf' [offline,online];   --修改数据文件状态,未开归档要在mount模式下执行
 alter tablespace tablespace_name [offline,online];   --修改表空间状态,mount模式可执行
 drop tablespace tablespace_name including contents and datafiles;   --删除表空间,包括其中的内容和数据文件,mount模式可执行
+
+select 
+  a.constraint_name, 
+  a.column_name 
+from 
+  user_cons_columns a, 
+  user_constraints b 
+where 
+  a.constraint_name = b.constraint_name 
+  and b.constraint_type = 'P' 
+  and a.table_name = upper('table_name');   --查看表上约束
 --------------------------------------------------------------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------------------------------------------------------------------
@@ -199,6 +210,7 @@ export/set NLS_LANG=查询结果   --设置导出/导出所用客户端的字符
 exp user_name/password@db_name file=path/file_name.dmp 
 compress=y   --压缩(可选)
 full=y   --全库导出
+statistics=none   --排除统计信息
 owner=(user_name1, user_name2, ..)   --导出某些用户的表
 tables=(table1, table2, ..)   --导出特定表
 tables=(table1, table2, ..) query=\"where_sql\"   --导出特定数据

@@ -55,3 +55,6 @@ JRockit   --BEA公司产品,用在WebLogic中间件上,因BEA被Oracle收购,Web
   In   --等价于SQL中的'in',比如 findByUsernameIn(Collection<String> userList) 方法的参数可以是Collection类型,也可以是数组或者不定长参数
   NotIn   --等价于SQL中的'not in',比如 findByUsernameNotIn(Collection<String> userList) 方法的参数可以是Collection类型,也可以是数组或者不定长参数
 --------------------------------------------------------------------------------------------------------------------------------------------
+
+
+keytool -genkey -alias tomcat -keypass 123456 -keyalg RSA -keysize 1024 -validity 365 -keystore D:/tomcat.keystore -storepass 123456

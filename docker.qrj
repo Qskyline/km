@@ -1,0 +1,23 @@
+----------------------------------------------------------------------------------------------------------------------------------------
+/*active commands [AC]*/
+docker run -itd 
+-h hostName 
+--name containerName 
+--restart=always 
+-p 6888:6888 ...
+--privileged=true 
+-v hostDirSource:dockerDirSource 
+centos6-eas-base
+/bin/bash dockerDirSource/initContainer.sh
+
+docker inspect containerName | grep IPAddress   --查看容器IP地址
+docker stop containerName
+docker rm containerName
+docker rename containerName_old containerName_new
+docker ps -a
+docker info
+docker attach containerName
+
+iptables -t nat -A DOCKER -p tcp --dport hostPort -j DNAT --to-destination containerIp:containerPort   --add container mapping-port
+
+----------------------------------------------------------------------------------------------------------------------------------------
