@@ -56,5 +56,31 @@ JRockit   --BEA公司产品,用在WebLogic中间件上,因BEA被Oracle收购,Web
   NotIn   --等价于SQL中的'not in',比如 findByUsernameNotIn(Collection<String> userList) 方法的参数可以是Collection类型,也可以是数组或者不定长参数
 --------------------------------------------------------------------------------------------------------------------------------------------
 
-
+--------------------------------------------------------------------------------------------------------------------------------------------
+/*active commands [AC]*/
 keytool -genkey -alias tomcat -keypass 123456 -keyalg RSA -keysize 1024 -validity 365 -keystore D:/tomcat.keystore -storepass 123456
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+/*active points [AP]*/
+--java environment values
+JAVA_HOME: jdk_path
+PATH: add the string ";%JAVA_HOME%\bin;%JAVA_HOME%\jre\bin"
+CLASSPATH: ".;%JAVA_HOME%\lib;%JAVA_HOME%\lib\tools.jar"
+
+--mavean environment value
+PATH：add the string "mavean_home + bin"
+
+--mavean setting
+<mirror>
+  <id>alimaven</id>
+  <name>aliyun maven</name>
+  <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+  <mirrorOf>central</mirrorOf>        
+</mirror>   --aliyun 镜像配置
+<localRepository>/path/to/local/repo</localRepository>   --本地仓库路径配置
+
+--tomcat install
+service install/remove service_name [username]
+--------------------------------------------------------------------------------------------------------------------------------------------
+
