@@ -139,6 +139,8 @@ iptables -t nat -A POSTROUTING -d destinationIP -p tcp --dport destinationPort -
 
 iptables -t nat -L -n --line-numbe   --查看nat表
 iptables -t nat -D chainName ruleNumber   --删除某个链中的某个规则
+
+find path -name file_name
 ----------------------------------------------------------------------------------------------------------------------------------------
 
 ----------------------------------------------------------------------------------------------------------------------------------------

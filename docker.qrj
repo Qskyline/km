@@ -3,12 +3,12 @@
 docker run -itd 
 -h hostName 
 --name containerName 
---restart=always 
--p 6888:6888 ...
---privileged=true 
--v hostDirSource:dockerDirSource 
-centos6-eas-base
-/bin/bash dockerDirSource/initContainer.sh
+--restart=always   #设置主机启动则启动该容器
+-p 6888:6888 -p 5901:5901 -p 2222:22 -p 10060:10060 ...
+--privileged=true   #设置挂载目录有权限操作
+-v hostDirSource:dockerDirSource #目录挂载
+centos6-eas-base   #容器使用的镜像
+/bin/bash dockerDirSource/initContainer.sh   #启动容器后执行的初始化脚本
 
 docker inspect containerName | grep IPAddress   --查看容器IP地址
 docker stop containerName
@@ -17,7 +17,9 @@ docker rename containerName_old containerName_new
 docker ps -a
 docker info
 docker attach containerName
+docker commit -p containerId snapshotName   --创建docker容器快照
+docker save -o path/fileName.tar snapshotName   --将docker容器快照保存为本地压缩文件
+docker load -i path/fileName.tar.tar   --加载docker镜像
 
 iptables -t nat -A DOCKER -p tcp --dport hostPort -j DNAT --to-destination containerIp:containerPort   --add container mapping-port
-
 ----------------------------------------------------------------------------------------------------------------------------------------
