@@ -68,8 +68,8 @@ JAVA_HOME: jdk_path
 PATH: add the string ";%JAVA_HOME%\bin;%JAVA_HOME%\jre\bin"
 CLASSPATH: ".;%JAVA_HOME%\lib;%JAVA_HOME%\lib\tools.jar"
 
---mavean environment value
-PATH：add the string "mavean_home + bin"
+--maven environment value
+PATH：add the string "maven_home + bin"
 
 --mavean setting
 <mirror>
@@ -80,7 +80,7 @@ PATH：add the string "mavean_home + bin"
 </mirror>   --aliyun 镜像配置
 <localRepository>/path/to/local/repo</localRepository>   --本地仓库路径配置
 
---tomcat install
-service install/remove service_name [username]
+--全局maven pom配置(after 3.x.x edition)
+$maven_home/lib/maven-model-builder-${version}.jar/org/apache/maven/model/pom-4.0.0.xml
 --------------------------------------------------------------------------------------------------------------------------------------------
 

@@ -79,13 +79,13 @@ Ctrl+C   --退出tail
 
 chkconfig --list   --查看所有服务在各个运行基本下面的状态
 service service_name status   --查看服务状态
-service service_name start   --开启服务s
+service service_name start   --开启服务
 service service_name stop   --关闭服务
 service service_name restart   --重启服务
+service --status-all   --查看服务
 
 ls -l   --显示文件权限
 ls -a   --查看所有文件
-chmod -R 777 [floder_name,file_name,null]   --递归赋权
 
 lscpu   --查看cpu的统计信息
 cat /proc/cpuinfo   --查看每个cpu信息
@@ -99,7 +99,7 @@ parted /dev/sda   --新建分区或者更改分区(进入后"print list"命令�
 df -h   --查看各分区使用情况
 
 --清空文件命令
-: > filename #其中的 : 是一个占位符, 不产生任何输出.
+: > filename   --其中的 : 是一个占位符, 不产生任何输出.
 > filename
 echo "" > filename
 echo /dev/null > filename
@@ -141,6 +141,43 @@ iptables -t nat -L -n --line-numbe   --查看nat表
 iptables -t nat -D chainName ruleNumber   --删除某个链中的某个规则
 
 find path -name file_name
+
+uname -a   --查看OS信息
+
+cat /proc/cpuinfo| grep "physical id"| sort| uniq| wc -l   --查看物理CPU个数
+cat /proc/cpuinfo| grep "cpu cores"| uniq   --查看每个物理CPU中core的个数(即核数)
+cat /proc/cpuinfo| grep "processor"| wc -l   --查看逻辑CPU的个数
+
+yum -y update   --更新yum源包
+umask 027   --将系统umask设置027
+cat /etc/passwd  --查看输出的第三列,用户标识号大于500就是后面创建的用户,其他即为系统用户
+cat /etc/group   --查看输出的第三列,用户标识号大于500就是后面创建的用户组,其他即为系统用户组
+userdel -r userName   --删除用户
+groupdel groupName   --删除用户组
+groupadd easadmin   --添加用户组
+useradd userName -g groupName   --添加用户
+passwd userName   --设置用户密码
+chown userName:groupName -R folderName   --更改目录所属用户
+chown userName:groupName fileName   --更改文件所属用户
+chmod -R 777 [floder_name,file_name,null]   --递归赋权
+
+--设置重要目录/文件的权限
+chmod 644 /etc/group
+chmod 400 /etc/shadow
+chmod 644 /etc/services
+chmod 644 /etc/passwd
+chmod 600 /etc/security
+chmod 400 /etc/rsyslog.conf   --修改系统管理行为日志的权限
+
+--限制at/cron的使用权限
+cd /etc/
+cp -p cron.deny cron.deny_bak
+cp -p at.deny at.deny_bak
+rm -f cron.deny at.deny
+echo root >cron.allow
+echo root >at.allow
+chown root:sys cron.allow at.allow
+chmod 400 cron.allow at.allow
 ----------------------------------------------------------------------------------------------------------------------------------------
 
 ----------------------------------------------------------------------------------------------------------------------------------------
@@ -161,6 +198,57 @@ find path -name file_name
 												   --together in the order of parsing. If a config file is explicitly specified with a module 
 												   --option then the files in the above directory are not parsed. The module must not be 
 												   --called by a multithreaded application.
+
+--仅允许某用户组中的用户使用su命令
+filePath：
+	/etc/pam.d/su
+operation: 
+	--add the following two lines to /etc/pam.d/su
+	auth sufficient pam_rootok.so
+	auth required pam_wheel.so use_uid group=groupName
+
+--密码过期策略设置
+filePath: 
+	/etc/login.defs
+operation:
+	PASS_MAX_DAYS 180   --新建用户的密码最长使用天数半年 
+	PASS_MIN_DAYS 0   --新建用户的密码最短使用天数
+	PASS_WARN_AGE 7   --新建用户的密码到期提前提醒天数 
+
+--密码强度设置
+filePath:
+	/etc/pam.d/system-auth
+operation:
+	--root用户修改其他用户密码不受限制,其他用户自行修改遵从下列规则:最低长度8、需要1个数字、1个大写字母、1个小写字母、1个特殊符号
+	password requisite pam_cracklib.so difok=1 minlen=8 ucredit=-1 lcredit=-1 dcredit=-1 ocredit=-1 minclass=4
+
+--设置登录超时时间
+filePath:
+	/etc/profile
+operation:
+	--在最后一行添加如下语句,设置超时时间为30分钟
+	export TMOUT=1800
+
+--禁止root使用远程登录,需要重启sshd服务
+filePath:
+	/etc/ssh/sshd_config
+operation:
+	PermitRootLogin=no
+
+--开启cron运行审计日志
+filePath:
+	/etc/rsyslog.conf
+operation:
+	--去除以下行注释
+	cron.*   /var/log/cron
+
+--清除系统敏感信息
+filePath:
+	/etc/motd
+	/etc/issue
+	/etc/issue.net
+operation:
+	empty the files content
 ----------------------------------------------------------------------------------------------------------------------------------------
 
 ----------------------------------------------------------------------------------------------------------------------------------------
@@ -170,3 +258,27 @@ PE   --Physical Extend,物理区域,PV中可以用于分配的最小存储单元
 VG   --Volume Group,卷组,建立在PV之上,可以含有一个到多个PV   
 LV   --Logical Volume,逻辑卷,建立在VG之上,相当于原来分区的概念,不过大小可以动态改变
 ----------------------------------------------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------------------------------------------
+/*centos yum 安装配置 [yum]*/
+
+----------------------------------------------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------------------------------------------
+/*common service infomation [服务]*/
+atd   --at调度服务
+auditd   --审计服务
+checking 
+docker   --docker服务
+irqbalance   --cpu优化服务
+messagebus   --Linux的IPC(Inter Process Communication,进程间通讯)服务
+rpc.statd   --statd后台程序,NFS环境中statd daemon与lockd daemon相结合,为锁机制提供crash和recovery功能
+ntpd   --时钟同步
+rngd   --生成随机数服务
+rpcbi   --RPC服务
+rsyslogd   --日志同步服务
+sendmail   --邮件发送服务
+sm-client   --smb服务器信息块服务
+openssh-daemon   --ssh服务
+----------------------------------------------------------------------------------------------------------------------------------------
+

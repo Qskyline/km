@@ -1,0 +1,47 @@
+--------------------------------------------------------------------------------------------------------------------------------------------
+/*configure [配置]*/
+--flle path
+$nginx_home/config/nginx.conf
+
+--information
+server {
+	listen 80;
+	server_name www.stat.me;
+	root "E:/lein/rkts/rkts/code/stat/public";   --整个server的资源路径
+
+	autoindex off;
+
+	--局部定义
+	location / {
+		deny 192.168.1.1;   --自上而下限制或允许某些访问
+        allow 127.0.0.0/24;
+        allow 192.168.0.0/16;
+        allow 10.10.0.0/16;
+        deny all;
+
+     	index index.html index.htm index.php;
+		root html;   --匹配后到这个目录下去找资源
+		try_files $uri $uri/ /index.php?$query_string;   --尝试访问匹配的uri
+        expires 60;
+        keepalive_timeout 60;
+
+        proxy_pass http://127.0.0.1;   --url后面如果有'/',最终代理路径将会舍弃'location'后面的匹配
+	 	--设置主机头和客户端真实地址,以便服务器获取客户端真实IP
+	 	proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        --禁用缓存
+        proxy_buffering off;
+
+        proxy_pass myLoadBalance;   --负载均衡配置
+	}
+}
+
+upstream myLoadBalance {
+	ip_hash;    --粘性session设置
+    server 192.168.1.251;
+    server 192.168.1.252;
+    server 192.168.1.247;
+}
+--------------------------------------------------------------------------------------------------------------------------------------------
+

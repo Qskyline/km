@@ -4,5 +4,74 @@ npm install -g vue-cli  --全局安装vue-cli脚手架
 vue init webpack project_name
 cd project_name
 npm install
-npm install -D vue-router vuex
+npm install -D vue-router vuex --registry=https://registry.npm.taobao.org
+npm config get globalconfig
+npm config get userconfig
+npm root -g   --查看全局的包的安装路径
+npm root   --查看当前包的安装路径
+npm list -g --depth 0   --查看全局安装的包
+npm list --depth 0   --查看当前项目安装的包(不包含全局安装的包)
+----------------------------------------------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------------------------------------------
+/*Common components [组件]*/
+vuex
+vue-router
+vue-resource
+vue-meta
+vue-form
+js-md5
+
+http-proxy-middleware {
+	--$projectPath/config/index.js
+	dev: {
+		...
+		proxyTable: {
+        	'/goods/login.do': {
+            	target: 'http://localhost',
+            	changeOrigin: true
+            	/*onProxyRes: function() {
+            	},
+           		pathRewrite: {
+                	'^/goods/login.do': '/goods/login.do'
+            	}*/
+        	}
+    	}
+		...
+	}
+}
+
+proxy-middleware {
+	--$projectPath/build/dev-server.js
+	var httpsProxyMiddleware = require('proxy-middleware')
+	Object.keys(httpsProxyTable).forEach(function (context) {
+		var options = httpsProxyTable[context]
+		if (typeof options === 'string') {
+		options = { target: options, rejectUnauthorized: true}
+		} else if (typeof options === 'object' && options.rejectUnauthorized == undefined) {
+		options.rejectUnauthorized = true
+		}
+		var httpsProxyOptions = url.parse(options.target)
+		httpsProxyOptions.rejectUnauthorized = options.rejectUnauthorized;
+		if(options.cookieRewrite) {
+		httpsProxyOptions.cookieRewrite = options.cookieRewrite    
+		}
+		app.use(context, httpsProxyMiddleware(httpsProxyOptions))
+	})
+
+	--$projectPath/config/index.js
+	dev: {
+		...
+		httpsProxyTable: {
+        	'/goods/security': {
+            	target: 'https://localhost/goods/security',
+            	rejectUnauthorized: false,
+            	cookieRewrite: 'www.test.com:8080'
+        	}
+    	}
+		...
+	}
+}
+
+bootstrap-vue
 ----------------------------------------------------------------------------------------------------------------------------------------

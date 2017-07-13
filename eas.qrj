@@ -60,6 +60,7 @@ vdissa.kingdee.com   --virtal desktop url, username: RD_rongji_qiu, password: th
 192.168.66.150/DevPortal/pages/main.jsp   --the url of DMP(Develop Management Platform), username: rongji_qiu, password: rongji_qiu$024110
 192.168.19.186:8000   --RTX server address and port, username: 邱荣基, password: null
 (ksm.kingdee.com or service.kingdee.com [8000]) and patch.kingdee.com [80]  --Patches source
+ip:http_port/easportal/tools/ksqltrace.jsp   --查看jdbc连接信息
 --------------------------------------------------------------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------------------------------------------------------------------

@@ -17,6 +17,17 @@ alter table table_name drop constraint constraint_name;   --删除约束
 alter table table_name add constraint constraint_name primary key(column1, column2, ...);   --新建主键约束
 select * from sysobjects where parent_obj in (select id from sysobjects where name='table_name') and xtype='pk';   --查看表的主键
 
+select
+    u.name userName,
+    object_name(o.parent_obj) tableName
+from
+    sys.sysobjects o
+    join sys.schemas u on (u.schema_id = o.uid)
+where 1=1
+    and o.type in ('U') 
+    and object_name(o.parent_obj) = 'table_name'
+order by 1,2;   --查看某个表的所属用户
+
 --删除维护计划(之后要执行删除作业操作)
 use msdb
 declare @plan_name varchar(100)
@@ -113,6 +124,7 @@ end
 drop table #tmp_lock_who
 return 0
 end
+exec sp_who_lock
 --------------------------------------------------------------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------------------------------------------------------------------
