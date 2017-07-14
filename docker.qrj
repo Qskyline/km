@@ -1,14 +1,21 @@
 ----------------------------------------------------------------------------------------------------------------------------------------
 /*active commands [AC]*/
-docker run -itd 
--h hostName 
---name containerName 
---restart=always   #设置主机启动则启动该容器
+docker run -itd
+-h hostName
+--name containerName
+--restart=always   --设置主机启动则启动该容器
 -p 6888:6888 -p 5901:5901 -p 2222:22 -p 10060:10060 ...
---privileged=true   #设置挂载目录有权限操作
--v hostDirSource:dockerDirSource #目录挂载
-centos6-eas-base   #容器使用的镜像
-/bin/bash dockerDirSource/initContainer.sh   #启动容器后执行的初始化脚本
+--privileged=true   --设置挂载目录有权限操作
+-v hostDirSource:dockerDirSource   --目录挂载
+centos6-eas-base   --容器使用的镜像
+/bin/bash dockerDirSource/initContainer.sh   --启动容器后执行的初始化脚本
+-m, --memory   --内存限制,格式是数字加单位,单位可以为b/k/m/g,最小为4M
+--memory-swap   --内存+交换分区大小总限制,格式同上,必须大于-m(--memory)的设置
+--memory-reservation   --内存的软性限制,格式同上
+--oom-kill-disable   --是否阻止'OOM killer'杀死容器,默认不设置
+--oom-score-adj   --容器被'OOM killer'杀死的优先级,范围是[-1000, 1000],默认为0
+--memory-swappiness   --用于设置容器的虚拟内存控制行为,值为[0, 100]之间的整数
+--kernel-memory   --核心内存限制,格式同上,最小为4M
 
 docker inspect containerName | grep IPAddress   --查看容器IP地址
 docker stop containerName

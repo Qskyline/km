@@ -71,7 +71,7 @@ CLASSPATH: ".;%JAVA_HOME%\lib;%JAVA_HOME%\lib\tools.jar"
 --maven environment value
 PATH：add the string "maven_home + bin"
 
---mavean setting
+--maven setting
 <mirror>
   <id>alimaven</id>
   <name>aliyun maven</name>
