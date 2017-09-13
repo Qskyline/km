@@ -67,6 +67,7 @@ alter tablespace tablespace_name add tempfile 'path/file_name.dbf' size 200M [au
 select * from dba_users where username=upper('user_name');   --查看特定用户默认表空间和临时表空间
 select * from user_all_tables where table_name=upper('table_name');   --查看特定表的所属表空间
 
+set serveroutput on;
 declare
 userName varchar(20):='skyline';
 tablespace_name varchar(50);  

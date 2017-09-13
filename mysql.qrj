@@ -1,23 +1,32 @@
 --------------------------------------------------------------------------------------------------------------------------------------------
 /*MySQL安装/删除相关命令参数 [安装/删除]*/
+--windows
 mysqld
   --install server_name
   --initialize-insecure   --需要独立执行
   --user=mysql   --windows可不指定
   --defaults-file=path/my.ini
   --remove
+
+--linux
+wget http://repo.mysql.com/mysql-community-release-el7-5.noarch.rpm   --下载mysql的repo源
+rpm -ivh mysql-community-release-el7-5.noarch.rpm   --安装此包以获取repo源
+yum install mysql-server   --安装mysql
+service mysqld start   --启动mysql
 --------------------------------------------------------------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------------------------------------------------------------------
 /*common SQL [SQL]*/
-use user;
+use mysql;
 SET PASSWORD FOR 'root'@'localhost' = PASSWORD('new_password');
 
 show ENGINES;   --查看数据库提供的存储引擎(可显示默认存储引擎)
 show variables like '%storage_engine%';   --查看数据库当前默认存储引擎
 show create table table_name;   --查看表的创建语句(包括存储引擎和字符集)
+show databases;   --查看所有数据库
 alter table table_name engine=engine_name;   --修改表的存储引擎
 select user from user;
+FLUSH PRIVILEGES;
 --------------------------------------------------------------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------------------------------------------------------------------
