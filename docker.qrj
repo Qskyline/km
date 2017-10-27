@@ -27,6 +27,31 @@ docker attach containerName
 docker commit -p containerId snapshotName   --创建docker容器快照
 docker save -o path/fileName.tar snapshotName   --将docker容器快照保存为本地压缩文件
 docker load -i path/fileName.tar.tar   --加载docker镜像
+docker commit -m='description info' --author='qskyline' containerId userName/imageName:tag   --生成镜像
+docker exec -it containerName bash   --连接容器bash
+docker images   --查看本机镜像
+docker logs containerName   --查看容器启动报错日志
+docker rmi imageId   --删除本地镜像
+docker build -t userName/imageName:tag [Dockerfile_Path|.]   --创建镜像
+docker tag repositoryName_old:tag repositoryName_new:tag   --重命名镜像
 
 iptables -t nat -A DOCKER -p tcp --dport hostPort -j DNAT --to-destination containerIp:containerPort   --add container mapping-port
 ----------------------------------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+/*Get Docker for CentOS [install]*/
+yum -y remove docker docker-common container-selinux
+yum -y remove docker-selinux
+yum install -y yum-utils
+yum-config-manager --add-repo https://docs.docker.com/v1.13/engine/installation/linux/repo_files/centos/docker.repo
+yum-config-manager --disable docker-testing
+--if you use CentOS6.x, please check /etc/yum.repos.d/docker.repo and change something.
+yum makecache fast
+--Install the latest version of Docker
+yum -y install docker-engine
+--install a specific version of Docker
+yum list docker-engine.x86_64  --showduplicates |sort -r
+yum -y install docker-engine-<VERSION_STRING>
+systemctl start docker
+docker run hello-world
+--------------------------------------------------------------------------------------------------------------------------------------------

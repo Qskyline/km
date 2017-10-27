@@ -9,24 +9,29 @@ mysqld
   --remove
 
 --linux
-wget http://repo.mysql.com/mysql-community-release-el7-5.noarch.rpm   --下载mysql的repo源
-rpm -ivh mysql-community-release-el7-5.noarch.rpm   --安装此包以获取repo源
+wget https://repo.mysql.com/mysql57-community-release-el7-11.noarch.rpm   --下载mysql的repo源
+rpm -ivh mysql57-community-release-el7-11.noarch.rpm   --安装此包以获取repo源
 yum install mysql-server   --安装mysql
 service mysqld start   --启动mysql
+
+--docker
+docker run --name mysql -p 12345:3306 -e MYSQL_ROOT_PASSWORD=qrj8761 -v /home/skyline/mysql/conf:/etc/mysql/mysql.conf.d -v /home/skyline/mysql/log:/var/log/mysql -v /home/skyline/mysql/data:/var/lib/mysql --restart=always --privileged=true -d mysql:5.7
+yum install mysql   --宿主机安装mysql客户端
 --------------------------------------------------------------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------------------------------------------------------------------
 /*common SQL [SQL]*/
 use mysql;
-SET PASSWORD FOR 'root'@'localhost' = PASSWORD('new_password');
-
+SET PASSWORD FOR 'userName'@'host' = PASSWORD('new_password');
+CREATE USER 'userName'@'host' IDENTIFIED BY 'password';
+GRANT [(privilege1, privilege2, ...) | all] ON dbName.tableName TO 'userName'@'host';   -- 'all'不包含权限'GRANT OPTION'
+FLUSH PRIVILEGES;
 show ENGINES;   --查看数据库提供的存储引擎(可显示默认存储引擎)
 show variables like '%storage_engine%';   --查看数据库当前默认存储引擎
 show create table table_name;   --查看表的创建语句(包括存储引擎和字符集)
 show databases;   --查看所有数据库
 alter table table_name engine=engine_name;   --修改表的存储引擎
 select user from user;
-FLUSH PRIVILEGES;
 --------------------------------------------------------------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------------------------------------------------------------------
