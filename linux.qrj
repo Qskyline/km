@@ -135,7 +135,7 @@ umount /dev/hda5   --卸载分区
 mkfs -t ext3 /dev/sda5   --创建文件系统(格式化)
 mklost+found   --创建lost+found文件夹
 find . -depth -print0|cpio --null --sparse -pvd /mnt/newhome/   --copy整个文件夹
-scp /path/file_name root@ip:/path   --Linux系统间互拷文件
+scp -pv 22 /path/file_name root@ip:/path   --Linux系统间互拷文件
 
 ssh -i license.pem userName@ip   --ssh证书认证连接远程机器, eg. ssh -i KingdeeEAS.pem ec2-user@10.0.100.145
 
@@ -188,6 +188,7 @@ rpm -ivh package_name   --安装package包
 netstat -tlnp | grep smb   --查看进程使用的端口
 
 yum search name   --查找软件包
+ifconfig eth0:0 192.168.0.1 netmask 255.255.255.0 up   --网卡eth0上增加ip(重启失效)
 ----------------------------------------------------------------------------------------------------------------------------------------
 
 ----------------------------------------------------------------------------------------------------------------------------------------
