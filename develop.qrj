@@ -1,0 +1,96 @@
+#!/bin/sh
+# install wget
+yum -y install wget
+
+# config yum repositories
+cd /etc/yum.repos.d
+mv CentOS-Base.repo CentOS-Base.repo.bak
+wget http://mirrors.163.com/.help/CentOS7-Base-163.repo -O /etc/yum.repos.d/CentOS7-Base-163.repo
+yum clean all
+yum makecache
+
+# install docker
+yum -y remove docker docker-common container-selinux
+yum -y remove docker-selinux
+yum -y install yum-utils
+yum-config-manager --add-repo https://docs.docker.com/v1.13/engine/installation/linux/repo_files/centos/docker.repo
+yum-config-manager --disable docker-testing
+yum makecache fast
+yum -y install docker-engine
+systemctl start docker
+
+# config docker network
+docker network create --subnet=172.66.0.0/16 develop
+
+# make develop environment persitent directory
+rm -rf /develop
+mkdir /develop
+chmod -R 700 /develop
+
+# set env H_BASE
+H_BASE=/develop
+
+# create tomcat container
+H_TOMCAT_BASE=$H_BASE/tomcat
+C_TOMCAT_BASE=/tomcat/apache-tomcat-9.0.1
+mkdir $H_TOMCAT_BASE
+mkdir $H_TOMCAT_BASE/logs
+mkdir $H_TOMCAT_BASE/runningData
+chmod -R 700 $H_TOMCAT_BASE
+
+docker run -itd \
+-u root \
+-h tomcat \
+--name tomcat \
+--privileged=true \
+--restart=always \
+--net develop \
+--ip 172.66.0.2 \
+-p 80:80 \
+-p 443:443 \
+-v $H_TOMCAT_BASE/logs:$C_TOMCAT_BASE/logs \
+-v $H_TOMCAT_BASE/runningData:$C_TOMCAT_BASE/runningData \
+skyline/tomcat:1.0
+
+# create mysql container
+# https://hub.docker.com/r/library/mysql/
+H_MYSQL_BASE=$H_BASE/mysql
+mkdir $H_MYSQL_BASE
+mkdir $H_MYSQL_BASE/logs
+mkdir $H_MYSQL_BASE/data
+chmod -R 700 $H_MYSQL_BASE
+
+docker run -itd \
+-u root \
+-h mysql \
+--name mysql \
+--privileged=true \
+--restart=always \
+--net develop \
+--ip 172.66.0.3 \
+-p 3306:3306 \
+-e MYSQL_ROOT_PASSWORD=qrj8761 \
+-v $H_MYSQL_BASE/logs:/var/log/mysql \
+-v $H_MYSQL_BASE/data:/var/lib/mysql \
+mysql:5.7
+
+yum -y install mysql
+
+# create jenkins container
+# https://hub.docker.com/r/library/jenkins/
+H_JENKINS_HOME=$H_BASE/jenkins
+mkdir $H_JENKINS_HOME
+chmod -R 700 $H_JENKINS_HOME
+
+docker run -itd \
+-u root \
+-h jenkins \
+--name jenkins \
+--privileged=true \
+--restart=always \
+--net develop \
+--ip 172.66.0.4 \
+-p 8080:8080 \
+-p 50000:50000 \
+-v $H_JENKINS_HOME:/var/jenkins_home \
+jenkins

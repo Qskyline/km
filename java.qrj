@@ -59,6 +59,15 @@ JRockit   --BEA公司产品,用在WebLogic中间件上,因BEA被Oracle收购,Web
 --------------------------------------------------------------------------------------------------------------------------------------------
 /*active commands [AC]*/
 keytool -genkey -alias tomcat -keypass 123456 -keyalg RSA -keysize 1024 -validity 365 -keystore D:/tomcat.keystore -storepass 123456
+
+--install jenkins
+wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat/jenkins.repo
+rpm --import https://pkg.jenkins.io/redhat/jenkins.io.key
+yum -y install jenkins
+
+--install maven
+wget http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo -O /etc/yum.repos.d/epel-apache-maven.repo
+yum -y install apache-maven
 --------------------------------------------------------------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------------------------------------------------------------------
