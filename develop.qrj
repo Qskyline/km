@@ -27,8 +27,11 @@ rm -rf /develop
 mkdir /develop
 chmod -R 700 /develop
 
-# set env H_BASE
+# set envs
 H_BASE=/develop
+IMAGE_TOMCAT=skyline/tomcat:1.0
+IMAGE_MYSQL=mysql:5.7
+IMAGE_JENKINS=jenkins
 
 # create tomcat container
 H_TOMCAT_BASE=$H_BASE/tomcat
@@ -50,7 +53,7 @@ docker run -itd \
 -p 443:443 \
 -v $H_TOMCAT_BASE/logs:$C_TOMCAT_BASE/logs \
 -v $H_TOMCAT_BASE/runningData:$C_TOMCAT_BASE/runningData \
-skyline/tomcat:1.0
+$IMAGE_TOMCAT
 
 # create mysql container
 # https://hub.docker.com/r/library/mysql/
@@ -59,6 +62,8 @@ mkdir $H_MYSQL_BASE
 mkdir $H_MYSQL_BASE/logs
 mkdir $H_MYSQL_BASE/data
 chmod -R 700 $H_MYSQL_BASE
+
+yum -y install mysql
 
 docker run -itd \
 -u root \
@@ -72,9 +77,7 @@ docker run -itd \
 -e MYSQL_ROOT_PASSWORD=qrj8761 \
 -v $H_MYSQL_BASE/logs:/var/log/mysql \
 -v $H_MYSQL_BASE/data:/var/lib/mysql \
-mysql:5.7
-
-yum -y install mysql
+$IMAGE_MYSQL
 
 # create jenkins container
 # https://hub.docker.com/r/library/jenkins/
@@ -93,4 +96,4 @@ docker run -itd \
 -p 8080:8080 \
 -p 50000:50000 \
 -v $H_JENKINS_HOME:/var/jenkins_home \
-jenkins
+$IMAGE_JENKINS
