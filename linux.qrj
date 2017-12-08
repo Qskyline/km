@@ -113,21 +113,25 @@ cat /dev/null > filename
 firewall-cmd --permanent --zone=public --add-rich-rule='rule family=ipv4 source address=172.20.70.68 port protocol=tcp port=80 accept'
 firewall-cmd --zone=public --add-port=80/tcp --permanent
 systemctl restart firewalld.service
-
 firewall-cmd --query-port=80/tcp   --查看端口是否开放
 
+yum -y install util-linux-ng   --安装lsblk
+lsblk   --列出所有可用块设备的信息(包含依赖关系)
+
 pvdisplay   --显示物理卷
-pvcreate /dev/sda3   --创建物理卷
+pvcreate /dev/pv_name   --创建物理卷, eg. pvcreate /dev/sda3
+
 vgdisplay   --显示逻辑卷组信息
-vgcreate vg_name volume_name   --创建逻辑卷组
-vgextend vg_name /dev/sda3   --扩展逻辑卷组
-vgreduce vg_name /dev/sda3   --收缩逻辑卷组
+vgcreate vg_name /dev/pv_name   --创建逻辑卷组
+vgextend vg_name /dev/pv_name   --扩展逻辑卷组
+vgreduce vg_name /dev/pv_name  --收缩逻辑卷组
 vgscan -v   --显示已有逻辑卷组
 lvcreate -L size(M) vg_name -n lv_name   --创建逻辑卷
 lvextend -L +size(G/M) /dev/vg_name/lv_name   --扩展逻辑卷
 lvreduce -L -size(G/M) /dev/vg_name/lv_name   --收缩逻辑卷
-resize2fs -p /dev/vg_name/lv_name   --重置逻辑卷大小(针对ext2/ext3/ext4文件系统)
-e2fsck -a -y /dev/hda3   --检查修复分区
+
+resize2fs -p [/dev/pv_name|/dev/vg_name/lv_name] size(G/M)   --重置卷大小(针对ext2/ext3/ext4文件系统)
+e2fsck -a -y [/dev/pv_name|/dev/vg_name/lv_name]   --检查卷
 
 rm -rf [floder,file]   --递归删除
 mount ext3 /dev/hda5 /mnt/newhome   --挂载分区
